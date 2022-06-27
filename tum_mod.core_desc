@@ -246,14 +246,17 @@ InstructionSet tum_semihosting extends RV32I {
         EBREAK [[no_cont]] {
             encoding: 0b000000000001 :: 5'b00000 :: 3'b000 :: 5'b00000 :: 7'b1110011;
             behavior: {
-                if (etiss_semihost_enabled()
-                 && (unsigned<32>)MEM[PC - 4] == 0x01f01013 // slli x0, x0, 0x1f   Entry NOP
-                 && (unsigned<32>)MEM[PC + 0] == 0x00100073 // ebreak              Break to debugger
-                 && (unsigned<32>)MEM[PC + 4] == 0x40705013 // srai x0, x0, 7      NOP encoding the semihosting call number 7
-                 ) {
+                if (etiss_semihost_enabled()) {
+                    if (   (unsigned<32>)MEM[PC - 4] == 0x01f01013 // slli x0, x0, 0x1f   Entry NOP
+                        && (unsigned<32>)MEM[PC + 0] == 0x00100073 // ebreak              Break to debugger
+                        && (unsigned<32>)MEM[PC + 4] == 0x40705013 // srai x0, x0, 7      NOP encoding the semihosting call number 7
+                    ) {
                     unsigned<XLEN> operation = X[10];
                     unsigned<XLEN> parameter = X[11];
                     X[10] = (signed<XLEN>)etiss_semihost(XLEN, operation, parameter);
+                    } else {
+                        raise(0, 3);
+                    }
                 } else {
                     raise(0, 3);
                 }
